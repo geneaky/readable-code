@@ -10,6 +10,8 @@ import cleancode.minesweeper.tobe.minesweeper.board.position.CellPosition;
 import cleancode.minesweeper.tobe.minesweeper.board.position.CellPositions;
 import cleancode.minesweeper.tobe.minesweeper.board.position.RelativePosition;
 import cleancode.minesweeper.tobe.minesweeper.gamelevel.GameLevel;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 
 public class GameBoard {
@@ -126,33 +128,46 @@ public class GameBoard {
         }
     }
 
+
     private void openOneCellAt(CellPosition cellPosition) {
         Cell cell = findCell(cellPosition);
         cell.open();
     }
 
+
     private void openSurroundedCells(CellPosition cellPosition) {
-        if (isOpenedCell(cellPosition)) {
+        Deque<CellPosition> deque = new ArrayDeque<>();
+        deque.push(cellPosition);
+
+        while (!deque.isEmpty()) {
+            openAndPushCellAt(deque);
+        }
+    }
+
+    private void openAndPushCellAt(Deque<CellPosition> deque) {
+        CellPosition currentCellPosition = deque.pop();
+        if (isOpenedCell(currentCellPosition)) {
             return;
         }
-        if (isLandMineCellAt(cellPosition)) {
+        if (isLandMineCellAt(currentCellPosition)) {
             return;
         }
 
-        openAt(cellPosition);
+        openOneCellAt(currentCellPosition);
 
-        if (doeCellHaveLandMineCount(cellPosition)) {
+        if (doeCellHaveLandMineCount(currentCellPosition)) {
             return;
         }
 
-        calculateSurroundedPositions(cellPosition, getRowSize(), getColSize())
-            .stream()
-            .forEach(this::openSurroundedCells);
+        List<CellPosition> surroundedPositions = calculateSurroundedPositions(currentCellPosition, getRowSize(), getColSize());
+        for (CellPosition surroundedPosition : surroundedPositions) {
+            deque.push(surroundedPosition);
+        }
     }
 
     private boolean isAllCellChecked() {
         Cells cells = Cells.from(board);
-        return cells.isAllCellChecked();
+        return cells.isAllChecked();
     }
 
     private boolean isLandMineCellAt(CellPosition cellPosition) {
@@ -176,7 +191,7 @@ public class GameBoard {
         int rowSize = getRowSize();
         int colSize = getColSize();
 
-        long count =  calculateSurroundedPositions(cellPosition, rowSize, colSize)
+        long count = calculateSurroundedPositions(cellPosition, rowSize, colSize)
             .stream()
             .filter(this::isLandMineCellAt)
             .count();

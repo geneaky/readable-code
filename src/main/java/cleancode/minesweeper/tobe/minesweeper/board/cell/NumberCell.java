@@ -27,7 +27,7 @@ public class NumberCell implements Cell {
 
     @Override
     public boolean isChecked() {
-        return false;
+        return cellState.isOpened();
     }
 
     @Override
